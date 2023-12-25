@@ -3,6 +3,46 @@
 #include <stdint.h>
 
 
+int isValidBMP(uint8_t minheader[],uint32_t width , uint32_t height, uint16_t BitsPerPixel, uint32_t headersize ) {
+    //Έλεγχος αν η εικόνα ξεκινάει την μαγική κεφαλίδα με τα bytes: 'B' 'M'.
+    if (minheader[0] != 'B' || minheader[1] != 'M') {
+         fprintf(stderr,"Not a BMP file.\n");
+        return 0;
+    }
+
+    //Έλεγχος αν η επικεφαλίδα εχει τουλάχιστον 54 στοιχεία.
+    if (headersize < 54) {
+        fprintf(stderr,"Header < 54. Not a valid BMP image.\n");
+        return 0;
+    }
+
+    //Μονο εικόνες που χρησιμοποιούν 24 bits για αναπαράσταση χρώματος είναι δεκτές.
+    if (BitsPerPixel != 24) {
+         fprintf(stderr,"Only 24-bit BMP files are supported.\n");
+        return 0;
+    }
+
+    int bytesPerPixel = BitsPerPixel / 8; // Υπολογισμός bytes ανά pixel
+    int rowSize = width * bytesPerPixel; // Μέγεθος κάθε γραμμής σε bytes χωρίς padding
+    int padding = 4 - (rowSize % 4); // Υπολογισμός του padding που απαιτείται
+
+    // Έλεγχος αν το μέγεθος της γραμμής μαζί με το padding είναι πολλαπλάσιο του 4
+    if ((rowSize + padding) % 4 != 0) {
+         fprintf(stderr, "Incorrect padding in the image.\n");
+        return 0;
+    }
+
+    //Ελεγχος για σωστο ύψος, πλάτος
+    if(height == 0 || width == 0) {
+        fprintf(stderr,"Invalid height or width\n");
+        return 0;
+    }
+
+    return 1;
+}
+
+
+
 //Συνάρτηση που περιστρέφει μια εικόνα bmp 90 μοίρες με τη φορά του ρολογιού
 void rotateBMP90degrees(FILE *input, FILE *output) {
 
@@ -10,26 +50,29 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
 
     //Διάβασμα της κεφαλίδας του αρχείου και έλεγχος οτι τα στοιχεία της κεφαλίδας ειναι 54.
     if (fread(minheader, sizeof(uint8_t), 54, input) != 54) {
-        printf("Error reading BMP header.\n");
+        fprintf(stderr,"Error reading BMP header.\n");
         exit(1);
     }
-    //Έλεγχος αν η εικόνα ξεκινάει την μαγική κεφαλίδα με τα bytes: 'B' 'M'.
-    if (minheader[0] != 'B' || minheader[1] != 'M') {
-        printf("Error: Not a BMP file.\n");
-        exit(1);
-    }
-    //Διαβασμα του πραγματικού μεγέθους του header.
-    uint32_t headersize = *(uint32_t*)&minheader[10];
 
-    //Έλεγχος αν η επικεφαλίδα εχει τουλάχιστον 54 στοιχεία.
-    if(headersize < 54) {
-        printf("Header < 54. Not valid bmp image\n");
+    
+    //Πληροφορίες για το πλάτος, το ύψος και τα bits για την αναπαράσταση του χρώματος και το πραγματικό μέγεθος της κεφαλίδας
+    // από τα στοιχεία της κεφαλίδας.
+    uint32_t width = *(uint32_t*)&minheader[18];
+    uint32_t height = *(uint32_t*)&minheader[22];
+    uint16_t BitsPerPixel = *(uint16_t*)&minheader[28]; 
+    uint32_t headersize = *(uint32_t*)&minheader[10];
+   
+    
+    int valid = isValidBMP(minheader,width,height, BitsPerPixel, headersize);
+
+    if(!valid) {
         exit(1);
     }
+
     //Δημιουργια πινακα header με ολα τα στοιχεια του.
     uint8_t *header = malloc(headersize * sizeof(uint8_t));
     if(!header) {
-        printf("Failed to allocate memory for header.\n");
+        fprintf(stderr,"Failed to allocate memory for header.\n");
         exit(1);
     } 
 
@@ -40,40 +83,30 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
 
     //Διάβασμα των υπολοιπων στοιχείων απο το header
     if (fread(header + 54, sizeof(uint8_t), headersize - 54, input) != headersize - 54) {
-    printf("Error reading complete header.\n");
+    fprintf(stderr,"Error reading complete header.\n");
     free(header);
     exit(1);
     }
 
-    //Πληροφορίες για το πλάτος, το ύψος και τα bits για την αναπαράσταση του χρώματος από τα στοιχεία της κεφαλίδας.
-    uint32_t width = *(uint32_t*)&header[18];
-    uint32_t height = *(uint32_t*)&header[22];
-    uint16_t BitsPerPixel = *(uint16_t*)&header[28]; 
 
-
-    //Μόνο εικόνες 24-bit είναι αποδεκτές
-    if (BitsPerPixel != 24) {
-        printf("Error: Only 24-bit BMP files are supported.\n");
-        exit(1);
-    }
 
 
     /*Το μέγεθος της εικόνας λαμβάνοντας υπόψη το padding: Υπολογίζεται το μέγεθος σε bytes, προστίθεται 3 για περίπτωση πιθανού padding,
     ακολουθεί ακεραια διαίρεση με το 4 για επαναφορά στο επόμενο πολλαπλάσιο του 4 και τελικα διαιρεση με 4 
     για υπολογισμό μεγέθους ξανα σε bytes*/
-    int originalSize = ((width * 3 + 3) / 4) * 4;
+    int originalRawSize = ((width * 3 + 3) / 4) * 4;
 
 
     //Δυναμική δέσμευση μνήμης για τα pixels της αρχικής εικόνας
-    uint8_t* pixels = malloc(height * originalSize * sizeof(uint8_t));
+    uint8_t* pixels = malloc(height * originalRawSize * sizeof(uint8_t));
     if(!pixels) { //Έλεγχος επιτυχίας της malloc.
-        printf("Failed to allocate memory\n");
+        fprintf(stderr,"Failed to allocate memory\n");
         exit(1);
     }
 
     //Διάβασμα της εικόνας.
-    if (fread(pixels, sizeof(uint8_t), height * originalSize, input) != height * originalSize) {
-        printf("Error reading pixel data.\n");
+    if (fread(pixels, sizeof(uint8_t), height * originalRawSize, input) != height * originalRawSize) {
+        fprintf(stderr,"Error reading pixel data.\n");
         free(pixels);
         exit(1);
     }
@@ -85,12 +118,12 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t new_height = width;
 
     //Υπολογισμός του μεγέθους της εικόνας λαμβάνοντας υπόψη το padding
-    int newSize = ((new_width * 3 + 3) / 4) * 4;
+    int newRawSize = ((new_width * 3 + 3) / 4) * 4;
 
     //Δυναμική δέσμευση μνήμης για την αποθήκευση των νέων ανεστραμμενων pixels
-    uint8_t* rotatedPixels = malloc(new_height * newSize * sizeof(uint8_t));
+    uint8_t* rotatedPixels = malloc(new_height * newRawSize * sizeof(uint8_t));
     if(!rotatedPixels) { //Έλεγχος επιτυχίας της malloc.
-        printf("Failed to allocate memory\n");
+        fprintf(stderr,"Failed to allocate memory\n");
         exit(1);
     }
 
@@ -108,9 +141,9 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
             /*Ο πολλαπλασιασμός του new_i με το new_row_size υπολογίζει τη γραμμή της νέας εικόνας,
               Ο πολλαπλασιασμός του new_j με το 3 (το οποίο αντιστοιχεί στον αριθμό των χρωματικών στοιχείων RGB - κόκκινο, πράσινο, μπλε)
               υπολογίζει τη στήλη της νέας εικόνας.*/
-            rotatedPixels[(new_i * newSize) + (new_j * 3)] = pixels[(i * originalSize) + (j * 3)]; //κοκκινο
-            rotatedPixels[(new_i * newSize) + (new_j * 3) + 1] = pixels[(i * originalSize) + (j * 3) + 1]; //πράσινο
-            rotatedPixels[(new_i * newSize) + (new_j * 3) + 2] = pixels[(i * originalSize) + (j * 3) + 2]; //μπλε
+            rotatedPixels[(new_i * newRawSize) + (new_j * 3)] = pixels[(i * originalRawSize) + (j * 3)]; //κοκκινο
+            rotatedPixels[(new_i * newRawSize) + (new_j * 3) + 1] = pixels[(i * originalRawSize) + (j * 3) + 1]; //πράσινο
+            rotatedPixels[(new_i * newRawSize) + (new_j * 3) + 2] = pixels[(i * originalRawSize) + (j * 3) + 2]; //μπλε
         }
     }
 
@@ -122,7 +155,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     fwrite(header, sizeof(uint8_t), headersize, output);
 
     //Τα νεα pixels γράφονται στη νέα εικόνα(output).
-    fwrite(rotatedPixels, sizeof(uint8_t), new_height * newSize, output);
+    fwrite(rotatedPixels, sizeof(uint8_t), new_height * newRawSize, output);
 
 
     //Αποδέσμευση των πινάκων
@@ -134,7 +167,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
 
 
 int main() {
-    //Κλήση της συνάρτησης για περιστροφή της εικόνας
-    rotateBMP90degrees(stdin, stdout);
+
+    rotateBMP90degrees(stdin, stdout); // Κλήση συνάρτησης για περιστροφή 
     return 0;
 }
