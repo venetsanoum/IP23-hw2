@@ -1,0 +1,140 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+
+//Συνάρτηση που περιστρέφει μια εικόνα bmp 90 μοίρες με τη φορά του ρολογιού
+void rotateBMP90degrees(FILE *input, FILE *output) {
+
+    uint8_t minheader[54]; //Δήλωση ενος πίνακα για την αποθήκευση των στοιχείων της κεφαλίδας
+
+    //Διάβασμα της κεφαλίδας του αρχείου και έλεγχος οτι τα στοιχεία της κεφαλίδας ειναι 54.
+    if (fread(minheader, sizeof(uint8_t), 54, input) != 54) {
+        printf("Error reading BMP header.\n");
+        exit(1);
+    }
+    //Έλεγχος αν η εικόνα ξεκινάει την μαγική κεφαλίδα με τα bytes: 'B' 'M'.
+    if (minheader[0] != 'B' || minheader[1] != 'M') {
+        printf("Error: Not a BMP file.\n");
+        exit(1);
+    }
+    //Διαβασμα του πραγματικού μεγέθους του header.
+    uint32_t headersize = *(uint32_t*)&minheader[10];
+
+    //Έλεγχος αν η επικεφαλίδα εχει τουλάχιστον 54 στοιχεία.
+    if(headersize < 54) {
+        printf("Header < 54. Not valid bmp image\n");
+        exit(1);
+    }
+    //Δημιουργια πινακα header με ολα τα στοιχεια του.
+    uint8_t *header = malloc(headersize * sizeof(uint8_t));
+    if(!header) {
+        printf("Failed to allocate memory for header.\n");
+        exit(1);
+    } 
+
+    //Αντιγραφή του παλιού minheader στο καινούργιο πινακα header.
+    for(int i = 0; i < 54; i++) {
+        header[i] = minheader[i];
+    }
+
+    //Διάβασμα των υπολοιπων στοιχείων απο το header
+    if (fread(header + 54, sizeof(uint8_t), headersize - 54, input) != headersize - 54) {
+    printf("Error reading complete header.\n");
+    free(header);
+    exit(1);
+    }
+
+    //Πληροφορίες για το πλάτος, το ύψος και τα bits για την αναπαράσταση του χρώματος από τα στοιχεία της κεφαλίδας.
+    uint32_t width = *(uint32_t*)&header[18];
+    uint32_t height = *(uint32_t*)&header[22];
+    uint16_t BitsPerPixel = *(uint16_t*)&header[28]; 
+
+
+    //Μόνο εικόνες 24-bit είναι αποδεκτές
+    if (BitsPerPixel != 24) {
+        printf("Error: Only 24-bit BMP files are supported.\n");
+        exit(1);
+    }
+
+
+    /*Το μέγεθος της εικόνας λαμβάνοντας υπόψη το padding: Υπολογίζεται το μέγεθος σε bytes, προστίθεται 3 για περίπτωση πιθανού padding,
+    ακολουθεί ακεραια διαίρεση με το 4 για επαναφορά στο επόμενο πολλαπλάσιο του 4 και τελικα διαιρεση με 4 
+    για υπολογισμό μεγέθους ξανα σε bytes*/
+    int originalSize = ((width * 3 + 3) / 4) * 4;
+
+
+    //Δυναμική δέσμευση μνήμης για τα pixels της αρχικής εικόνας
+    uint8_t* pixels = malloc(height * originalSize * sizeof(uint8_t));
+    if(!pixels) { //Έλεγχος επιτυχίας της malloc.
+        printf("Failed to allocate memory\n");
+        exit(1);
+    }
+
+    //Διάβασμα της εικόνας.
+    if (fread(pixels, sizeof(uint8_t), height * originalSize, input) != height * originalSize) {
+        printf("Error reading pixel data.\n");
+        free(pixels);
+        exit(1);
+    }
+
+    //Το νέο πλάτος της εικόνας είναι το παλιό ύψος
+    uint32_t new_width = height;
+
+    //Το νέο ύψος της εικόνας είναι το παλιό πλάτος
+    uint32_t new_height = width;
+
+    //Υπολογισμός του μεγέθους της εικόνας λαμβάνοντας υπόψη το padding
+    int newSize = ((new_width * 3 + 3) / 4) * 4;
+
+    //Δυναμική δέσμευση μνήμης για την αποθήκευση των νέων ανεστραμμενων pixels
+    uint8_t* rotatedPixels = malloc(new_height * newSize * sizeof(uint8_t));
+    if(!rotatedPixels) { //Έλεγχος επιτυχίας της malloc.
+        printf("Failed to allocate memory\n");
+        exit(1);
+    }
+
+
+    /*Για τη περιστροφή: Η πρώτη γραμμη της εικόνας θα γίνει η τελευταία στήλης της νέας εικόνας, η τελευταία γραμμή της εικόνας
+    θα γίνει η πρώτη στήλη της νέας εικόνας κοκ. H πρώτη στήλη της εικόνας θα γίνει η πρώτη γραμμη της νέας κοκ.*/
+    for (uint32_t i = 0; i < height; ++i) { //Αφορά το ύψος της εικόνας, τις γραμμες
+
+        uint32_t new_j = i; //οι στήλες της νέας εικόνας θα γίνουν οι γραμμες της αρχικής εικόνας.
+
+        for (uint32_t j = 0; j < width; ++j) { //Αφορά το πλάτος της εικόνας, τις στήλες
+            uint32_t new_i = width - 1 - j;//Οι γραμμες της νέας εικόνας θα γίνουν οι στήλες της αρχικής εικόνας ξεκινώντας απο το τελος.
+
+            //Αντιγράφονται το κοκκινο, το πράσινο και το μπλε στοιχείο των pixels της αρχικής εικόνας στη κατάλληλη θέση στο νέο πινακα με τα pixels
+            /*Ο πολλαπλασιασμός του new_i με το new_row_size υπολογίζει τη γραμμή της νέας εικόνας,
+              Ο πολλαπλασιασμός του new_j με το 3 (το οποίο αντιστοιχεί στον αριθμό των χρωματικών στοιχείων RGB - κόκκινο, πράσινο, μπλε)
+              υπολογίζει τη στήλη της νέας εικόνας.*/
+            rotatedPixels[(new_i * newSize) + (new_j * 3)] = pixels[(i * originalSize) + (j * 3)]; //κοκκινο
+            rotatedPixels[(new_i * newSize) + (new_j * 3) + 1] = pixels[(i * originalSize) + (j * 3) + 1]; //πράσινο
+            rotatedPixels[(new_i * newSize) + (new_j * 3) + 2] = pixels[(i * originalSize) + (j * 3) + 2]; //μπλε
+        }
+    }
+
+    // Ενημέρωση των στοιχείων της κεφαλίδας για την ανεστραμμενη εικόνα
+    *(uint32_t*)&header[18] = new_width;
+    *(uint32_t*)&header[22] = new_height;
+
+    //Τα στοιχεία της κεφαλίδας γράφονται στην νέα εικόνα (output).
+    fwrite(header, sizeof(uint8_t), headersize, output);
+
+    //Τα νεα pixels γράφονται στη νέα εικόνα(output).
+    fwrite(rotatedPixels, sizeof(uint8_t), new_height * newSize, output);
+
+
+    //Αποδέσμευση των πινάκων
+    free(pixels); 
+    free(rotatedPixels);
+    free(header);
+}
+
+
+
+int main() {
+    //Κλήση της συνάρτησης για περιστροφή της εικόνας
+    rotateBMP90degrees(stdin, stdout);
+    return 0;
+}
