@@ -47,50 +47,26 @@ int max(long int a, long int b) { //Συνάρτηση για την εύρεσ�
 }
 
 void CommonSubStr(char* X, char* Y, long int m, long int n) {
-    // Δήλωση του πίνακα CommonStrCounter για αποθήκευση των μηκών των κοινών υποσυμβολοσειρών
-    unsigned char **CommonStrCounter = malloc((m + 1) * sizeof(unsigned char *));
-    //Προσθήκη +1 για τον τερματικό χαρακτήρα \0
-    if (!CommonStrCounter) {
-        printf("Failed to allocate memory1\n");
-        exit(1);
-    }
-    // Δέσμευση μνήμης για κάθε σειρά του πίνακα CommonStrCounter
-    //Προσθήκη +1 για τον τερματικό χαρακτήρα \0
-    for (long int k = 0; k < m + 1; k++) {
-        CommonStrCounter[k] = malloc((n + 1) * sizeof(unsigned char));
-        if (!CommonStrCounter[k]) {
-            printf("Failed to allocate memory2\n");
-            exit(1);
-        }
-    }
+    long int result = 0; 
+    long int end = 0; 
 
     
-    // Αρχικοποίηση μεταβλητών για τον εντοπισμό της μεγαλύτερης κοινής υποσυμβολοσειράς
-    long int result = 0;
-    long int end = 0;
+    for (long int i = 0; i < m; i++) {
+        for (long int j = 0; j < n; j++) {
+            long int len = 0; 
+            long int x = i, y = j; 
 
-    // Δημιουργία πίνακα για αποθήκευση των μήκων των μεγαλύτερων κοινών συμβόλων των string.
-    // Σημειώστε ότι η CommonStrCounter[i][j] περιέχει το μήκος της μεγαλύτερης κοινής κατάληξης
-    // των X[0..i-1] και Y[0..j-1].
+           
+            while (x < m && y < n && X[x] == Y[y]) {
+                len++;
+                x++;
+                y++;
+            }
 
-    for (long int i = 0; i <= m; i++) {
-        for (long int j = 0; j <= n; j++) {
-            if (i == 0 || j == 0)
-            // Οι πρώτες εγγραφές στην πρώτη σειρά και στην πρώτη στήλη
-            // δεν έχουν λογική σημασία, 
-            // χρησιμοποιούνται μόνο για την απλοποίηση του προγράμματος.
-                CommonStrCounter[i][j] = 0;
-            else if (X[i - 1] == Y[j - 1]) {
-                // Αν τα σύμβολα στις θέσεις i-1 και j-1 είναι ίδια, αυξάνουμε το μήκος της κοινής υποσυμβολοσειράς
-                CommonStrCounter[i][j] = CommonStrCounter[i - 1][j - 1] + 1;
-                if (CommonStrCounter[i][j] > result) {
-                    // Αν το νέο μήκος είναι μεγαλύτερο από το προηγούμενο, ενημερώνουμε τα αποτελέσματα
-                    result = CommonStrCounter[i][j];
-                    end = i - 1;
-                }
-            } else {
-                // Σε περίπτωση μη ταυτότητας των συμβόλων, το μήκος της κοινής υποσυμβολοσειράς γίνεται 0
-                CommonStrCounter[i][j] = 0;
+            
+            if (len > result) {
+                result = len;
+                end = i + len - 1;
             }
         }
     }
@@ -100,22 +76,11 @@ void CommonSubStr(char* X, char* Y, long int m, long int n) {
         return;
     }
 
-     // Υπολογισμός των δεικτών για την αρχή και το τέλος της μεγαλύτερης κοινής υποσυμβολοσειράς
-    long int start = end - result + 1;
-    
-    // Εκτύπωση της μεγαλύτερης κοινής υποσυμβολοσειράς
-    for (long int i = start; i <= start + result - 1; i++) {
-        // Εκτύπωση μόνο των έγκυρων χαρακτήρων
-        if (X[i] == 'A' || X[i] == 'G' || X[i] == 'T' || X[i] == 'C') {
-            printf("%c", X[i]);
-        }
+    printf("%ld\n" ,result);
+    for (long int i = end - result + 1; i <= end; i++) {
+        printf("%c", X[i]);
     }
     printf("\n");
-    //Αποδέσμευση της μνήμης για τον πίνακα CommonStrCounter
-    for (long int k = 0; k < m + 1; k++) {
-        free(CommonStrCounter[k]);
-    }
-    free(CommonStrCounter);
 }
 
 
