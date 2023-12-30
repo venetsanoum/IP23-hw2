@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-
+//Συνάρτηση που ελέγχει αν η εικόνα είναι έγκυρη.
 int isValidBMP(uint8_t minheader[],uint32_t width , uint32_t height, uint16_t BitsPerPixel, uint32_t headersize ) {
+
     //Έλεγχος αν η εικόνα ξεκινάει την μαγική κεφαλίδα με τα bytes: 'B' 'M'.
     if (minheader[0] != 'B' || minheader[1] != 'M') {
          fprintf(stderr,"Not a BMP file.\n");
@@ -63,15 +64,15 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t headersize = *(uint32_t*)&minheader[10];
    
     
-    int valid = isValidBMP(minheader,width,height, BitsPerPixel, headersize);
+    int valid = isValidBMP(minheader,width,height, BitsPerPixel, headersize); //Κλ'ηση της isValidBMP για να ελέγξω αν η εικόνα ειναι έγκυρη
 
-    if(!valid) {
+    if(!valid) { //Αν δεν ειναι εγκυρη το προγραμμα τερματίζεται με κωδικό εξόδου 1.
         exit(1);
     }
 
     //Δημιουργια πινακα header με ολα τα στοιχεια του.
     uint8_t *header = malloc(headersize * sizeof(uint8_t));
-    if(!header) {
+    if(!header) { //Έλεγχος επιτυχίας της malloc
         fprintf(stderr,"Failed to allocate memory for header.\n");
         exit(1);
     } 
@@ -88,9 +89,6 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     exit(1);
     }
 
-
-
-
     /*Το μέγεθος της εικόνας λαμβάνοντας υπόψη το padding: Υπολογίζεται το μέγεθος σε bytes, προστίθεται 3 για περίπτωση πιθανού padding,
     ακολουθεί ακεραια διαίρεση με το 4 για επαναφορά στο επόμενο πολλαπλάσιο του 4 και τελικα διαιρεση με 4 
     για υπολογισμό μεγέθους ξανα σε bytes*/
@@ -104,7 +102,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
         exit(1);
     }
 
-    //Διάβασμα της εικόνας.
+    //Διάβασμα της εικόνας και έλεγχος αν η fread πέτυχε
     if (fread(pixels, sizeof(uint8_t), height * originalRawSize, input) != height * originalRawSize) {
         fprintf(stderr,"Error reading pixel data.\n");
         free(pixels);
@@ -117,7 +115,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     //Το νέο ύψος της εικόνας είναι το παλιό πλάτος
     uint32_t new_height = width;
 
-    //Υπολογισμός του μεγέθους της εικόνας λαμβάνοντας υπόψη το padding
+    //Το μέγεθος της εικόνας λαμβάνοντας υπόψη το padding
     int newRawSize = ((new_width * 3 + 3) / 4) * 4;
 
     //Δυναμική δέσμευση μνήμης για την αποθήκευση των νέων ανεστραμμενων pixels
