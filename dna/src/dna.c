@@ -76,7 +76,7 @@ void CommonSubStr(char* X, char* Y, long int m, long int n) {
         return;
     }
 
-    printf("%ld\n" ,result);
+    
     for (long int i = end - result + 1; i <= end; i++) {
         if(X[i] == 'A' || X[i] == 'C' || X[i] == 'G' || X[i] == 'T'){
         printf("%c", X[i]);
