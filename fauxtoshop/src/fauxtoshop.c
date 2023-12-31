@@ -61,7 +61,8 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t width = *(uint32_t*)&minheader[18];
     uint32_t height = *(uint32_t*)&minheader[22];
     uint16_t BitsPerPixel = *(uint16_t*)&minheader[28]; 
-    uint32_t headersize = *(uint32_t*)&minheader[10];
+    uint32_t headersize = *(uint32_t*)&minheader[10]; //Το offset της εικόνας θα είναι το τέλος του header(άρα βρίσκω το μέγεθός του)
+
    
     
     int valid = isValidBMP(minheader,width,height, BitsPerPixel, headersize); //Κλ'ηση της isValidBMP για να ελέγξω αν η εικόνα ειναι έγκυρη
