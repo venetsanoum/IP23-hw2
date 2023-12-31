@@ -4,8 +4,8 @@
 #include <math.h>
 
 // Η συνάρτηση load_file διαβάζει το περιεχόμενο ενός αρχείου και το επιστρέφει ως δυναμικά δεσμευμένη συμβολοσειρά.
-char* load_file(char const* path) {
-    char* buffer = NULL;  //Αρχικοποίηση με NULL για να δεσμευτεί μνήμη αργότερα με βάση το μέγεθος του αρχείου
+char* LoadFile(char const* path) {
+    char* buffer;  //Δήλωση πίνακα buffer
     long  length;
     
     FILE * file = fopen(path, "r"); // Άνοιγμα του αρχείου για ανάγνωση
@@ -14,7 +14,7 @@ char* load_file(char const* path) {
         fseek(file, 0, SEEK_END);
         length = ftell(file); // Υπολογισμός του μεγέθους του αρχείου.
         fseek(file, 0, SEEK_SET);
-        buffer = (char*)malloc((length + 1) * sizeof(char)); // Δέσμευση μνήμης με βάση το πραγματικό μέγεθος του αρχείου
+        buffer = malloc((length + 1) * sizeof(char)); // Δέσμευση μνήμης με βάση το πραγματικό μέγεθος του αρχείου
         //Προσθήκη +1 για τον τερματικό χαρακτήρα \0
         if(!buffer) { // Έλεγχος για την επιτυχία της δέσμευσης μνήμης.
             printf("Failed to allocate memory for buffer\n");
@@ -27,9 +27,9 @@ char* load_file(char const* path) {
                 printf("Failed to read file: %s\n", path);
                 exit(1);
             }
-            buffer[length] = '\0';
-        }else { //Αν η δυναμική δέσμευση μνήμης απέτυχε
-        printf("Failed to open file: %s\n", path);
+            buffer[length] = '\0'; // Προσθήκη τερματισμού συμβολοσειράς
+        }else { //Αν το διάβασμα του αρχείου απέτυχε
+        printf("Failed to read file: %s\n", path);
     }
         fclose(file);
     }else { //Αν το αρχείο δεν άνοιξε επιτυχώς.
@@ -37,47 +37,49 @@ char* load_file(char const* path) {
         exit(1);
     }
 
-    return buffer;  // Επιστροφή του δείκτη προς την αρχή του buffer που περιέχει τα δεδομένα του αρχείου.
+    return buffer;  // Επιστροφή του πίνακα buffer με τα στοιχεία της αλυσίδας.
     
 
 }
 
-int max(long int a, long int b) { //Συνάρτηση για την εύρεση του μεγίστου μεταξύ δύο αριθμών
-    return (a > b) ? a : b;
-}
 
 void CommonSubStr(char* X, char* Y, long int m, long int n) {
-    long int result = 0; 
-    long int end = 0; 
+    long int maxCommonChain = 0; //Το μέγιστο μήκος της κοινής αλυσίδας μεταξύ δύο αλυσίδων. 
+    long int end = 0; //Η θέση του τελευταίου στοιχείου της κοινής αλυσίδας
 
-    
+    //For loop για κάθε χαρακτήρα του πίνακα Χ[]
     for (long int i = 0; i < m; i++) {
+        //For loop για κάθε χαρακτήρα του πίνακα Υ[]
         for (long int j = 0; j < n; j++) {
-            long int len = 0; 
-            long int x = i, y = j; 
+            long int currentLength = 0;  //Το τρέχον μέγεθος μιας κοινής συμβολοσειράς
+            long int x = i, y = j; //Κρατάω τις θέσεις των στοιχείων του πινακα Χ και του Υ αντίστοιχα
 
-           
+            /*Έλεγχος για κοινή αλυσίδα ξεκινώντας απο τις θέσεις i και j. Όσο δεν είμαστε στο τέλος κάποιας αλυσίδας και τα δύο στοιχεία
+            ταυτίζονται αυξάνεται το μέγεθος της τρέχουσας κοινής αλυσίδας και οι θέσεις των στοιχείων ωστε να πάμε στα επόμενα*/
             while (x < m && y < n && X[x] == Y[y]) {
-                len++;
+                currentLength++;
                 x++;
                 y++;
             }
 
-            
-            if (len > result) {
-                result = len;
-                end = i + len - 1;
+            //Έυρεση του μεγίστου. Αν το μέγεθος της τρέχους κοινής αλτσίδας είναι μεγαλύτερο απο το τρέχον max τοτε max γίνεται η τρέχουσα αλυσίδα
+            if (currentLength > maxCommonChain) {
+                maxCommonChain = currentLength;
+                end = i + maxCommonChain - 1; /*Η θέση του τελευταίου στοιχείου είναι όσο είναι το i(τυχαίο, μπορουσε και j), δηλαδή
+                η θέση (της μιας αλυσίδας) στην οποία βρισκόμαστε  + όσο είσαι το μέγεθος της μέγιστης κοινής αλυσίδας - 1 γιατι διαφορετικά
+                θα είχα τη θέση του επόμενου στοιχείου μετά το τελικό.*/
             }
         }
     }
 
-    if (result == 0) {
+    if (maxCommonChain == 0) { //Αν δεν υπάρχει κοινή ακολουθίας εκτυπώνεται μήνυμα.
         printf("No common substring found.\n");
         return;
     }
 
-    
-    for (long int i = end - result + 1; i <= end; i++) {
+    long int start = end - maxCommonChain + 1; /*Ορισμός της αρχής της μέγιστης κοινής αλυσίδας που είναι όσο ήταν η θέση του
+    τελευταίου στοιχείου - το μήκος της κοινης αλυσίδας + 1 γιατι διαφορετικά θα ήμασταν στη θέση του προηγούμενου απο το πρώτο στοιχείο*/
+    for (long int i = start; i <= end; i++) { //Εκτύπωση μόνο των έγκυτων χαρακατήρων.
         if(X[i] == 'A' || X[i] == 'C' || X[i] == 'G' || X[i] == 'T'){
         printf("%c", X[i]);
         }
@@ -88,16 +90,16 @@ void CommonSubStr(char* X, char* Y, long int m, long int n) {
 
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
+    if (argc != 3) { //Αν τα ορίσματα δεν είναι 3 εκτυπώνεται μήνυμα λάθους
         printf("Program needs to be called as: ./dna <file1> <file2>\n");
         return 1;
     }
     
 
-    char* StringA = load_file(argv[1]); //Κληση load_file για το ανοιγμα των αρχείων εισόδου
-    char* StringB = load_file(argv[2]);
+    char* StringA = LoadFile(argv[1]); //Κληση load_file για το ανοιγμα των αρχείων εισόδου
+    char* StringB = LoadFile(argv[2]);
 
-    if (!StringA || !StringB) {
+    if (!StringA || !StringB) { //Έλεγχος αν πέτυχε το φόρτωμα των αρχείων
         perror("Error loading file contents\n");
         return 1;
     }
@@ -106,13 +108,7 @@ int main(int argc, char **argv) {
     long int length1 = strlen(StringA); //Υπολογισμός μεγέθους των δύο ακολουθιών dna
     long int length2 = strlen(StringB);
 
-
-    StringA[length1] = '\0'; // Προσθήκη τερματισμού συμβολοσειράς
-    StringB[length2] = '\0'; // Προσθήκη τερματισμού συμβολοσειράς
-
-    
-
-    CommonSubStr(StringA, StringB, length1, length2);
+    CommonSubStr(StringA, StringB, length1, length2); //Κλήση της συνάρτησης για την εύρεση της μέγιστης κοινής αλυσίδας μεταξύ των 2.
 
     
     free(StringA); //Αποδέσμευση των πινάκων με τις ακολουθίες dna
