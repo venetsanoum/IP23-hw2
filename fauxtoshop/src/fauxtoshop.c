@@ -90,10 +90,9 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     exit(1);
     }
 
-    /*Το μέγεθος της εικόνας λαμβάνοντας υπόψη το padding: Υπολογίζεται το μέγεθος σε bytes, προστίθεται 3 για περίπτωση πιθανού padding,
-    ακολουθεί ακεραια διαίρεση με το 4 για επαναφορά στο επόμενο πολλαπλάσιο του 4 και τελικα διαιρεση με 4 
-    για υπολογισμό μεγέθους ξανα σε bytes*/
-    int originalRawSize = ((width * 3 + 3) / 4) * 4;
+    int originalRawSize = 3 * width; //Το μέγεθος της γραμμής είναι το πλάτος επί 3 γιατί η εικόνα έχει 3 bytes ανα pixel
+    int padding = (4 - (originalRawSize % 4)) % 4; //Υπολογισμός του padding
+    originalRawSize += padding; //Το τελικό μέγεθος κάθε γραμμής
 
 
     //Δυναμική δέσμευση μνήμης για τα pixels της αρχικής εικόνας
@@ -117,7 +116,10 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t new_height = width;
 
     //Το μέγεθος της εικόνας λαμβάνοντας υπόψη το padding
-    int newRawSize = ((new_width * 3 + 3) / 4) * 4;
+    int newRawSize = 3 * new_width;
+    int new_padding = (4 -(newRawSize % 4)) % 4;
+    newRawSize += new_padding;
+
 
     //Δυναμική δέσμευση μνήμης για την αποθήκευση των νέων ανεστραμμενων pixels
     uint8_t* rotatedPixels = malloc(new_height * newRawSize * sizeof(uint8_t));
@@ -169,4 +171,4 @@ int main() {
 
     rotateBMP90degrees(stdin, stdout); // Κλήση συνάρτησης για περιστροφή 
     return 0;
-}
+} 
