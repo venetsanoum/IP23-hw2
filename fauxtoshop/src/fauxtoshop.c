@@ -33,17 +33,11 @@ int isValidBMP(uint8_t minheader[],uint32_t width , uint32_t height, uint16_t Bi
         return 0;
     }
 
-    //Έλεγχος αν το μέγεθος της εικόνας συμφωνεί με τα στοιχεία του αρχείου
-    if(imagesize != headersize + filesize) {
-        fprintf(stderr,"File size does not match the actual size of the image\n");
-        return 0;
 
-    }
-
-    //Έλεγχος για το αν το image size στον DIB header είναι τουλάχιστον ίσο με το πραγματικό μέγεθος των δεδομένων της εικόνας
-    uint32_t realImageSize = filesize - headersize;
-    if (imagesize < realImageSize) {
-        fprintf(stderr, "Image size in header is smaller than actual image data size.\n");
+    //Έλεγχος για το αν το file size στο header είναι διάφορο από το πραγματικό μέγεθος του αρχείου.
+    uint32_t realfileSize = imagesize + headersize;
+    if (filesize != realfileSize) {
+        fprintf(stderr, "File size (in header) does not match the actual size of the file.\n");
         return 0;
     }
 
@@ -75,10 +69,10 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t height = *(uint32_t*)&minheader[22];
     uint16_t BitsPerPixel = *(uint16_t*)&minheader[28]; 
     uint32_t offset = *(uint32_t*)&minheader[10]; 
-    uint32_t imagesize = *(uint32_t*)&minheader[2];
-    uint32_t filesize = *(uint32_t*)&minheader[34];
+    uint32_t filesize = *(uint32_t*)&minheader[2];
+    uint32_t imagesize = *(uint32_t*)&minheader[34];
 
-    uint32_t headersize = imagesize - filesize; //Το μέγεθος του header είναι το συνολικό μέγεθος της εικόνας - το μέγεθος του αρχείου
+    uint32_t headersize = filesize - imagesize; //Το μέγεθος του header είναι το συνολικό μέγεθος της εικόνας - το μέγεθος του αρχείου
 
     uint32_t otherdata = offset - headersize; //Τα other data θα είναι από εκει που τελειώνει το header εως το offset της εικόνας.
     
@@ -194,6 +188,16 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     *(uint32_t*)&header[34] = newimagesize;
     uint32_t newfilesize = newimagesize + headersize;
     *(uint32_t*)&header[2] = newfilesize;
+
+    int newvalid = isValidBMP(minheader,new_width , new_height, BitsPerPixel, headersize, newfilesize, newimagesize);
+    if(!newvalid) {
+        fprintf(stderr,"(about rotated image).\n");
+        free(header);
+        free(rotatedPixels);
+        free(OtherData);
+        free(pixels);
+        exit(1);
+    }
     
 
 
