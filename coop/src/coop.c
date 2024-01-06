@@ -3,19 +3,6 @@
 #include <stdlib.h>
 
 
-int prime( long int n){ //Συνάρτηση που ελέγχει αν ένας αριθμός ειναι πρώτος
-   if(!(n % 2)){
-    return 0;
-   }
-   for(int i = 3 ; i <= sqrt(n); i+=2){
-    if(!(n % i)){
-        return 0;
-    }
-   }
-   return 1;
-}
-
-
 void coop() {
     char move;
 
@@ -26,6 +13,8 @@ void coop() {
     long int roundCounter = 0; //Μετρητης των γύρων.
     int opponentCooperationCount = 0; //Μετρητής των φορών που ο αντίπαλος συνεργάστηκε 
     int opponentDefectionCount = 0; //Μετρητής των φορών που ο αντίπαλος δεν συνεργάστηκε
+    int consecutiveDefectionCount =0;
+  
 
     while ((move = getchar()) != EOF && roundCounter < 1e6) { //Όσο η είσοδος δεν είναι EOF και δεν έχουν ξεπεραστεί 1000 επαναλήψεις
         if (move == 'C' || move == 'D') {
@@ -33,8 +22,14 @@ void coop() {
 
              if (move == 'C') {
                 opponentCooperationCount++; //Αυξηση μετρητή των συνεργασιων (C)
+                consecutiveDefectionCount =0;
+                
+
             } else { 
                 opponentDefectionCount++; //Αυξηση μετρητή των εκδικήσεων (D)
+                consecutiveDefectionCount++;
+                
+
             }
 
             if (roundCounter % 10 == 0) {  //Κάθε 10 γύρους
@@ -50,12 +45,8 @@ void coop() {
                 
                 opponentCooperationCount = 0; //επαναφορά των μετρητών στο 0 για του επόμενους 10 γύρους
                 opponentDefectionCount = 0;
-            }else { //Αν οι γύροι δεν ειναι πολλαπλασιο του 10
-                if(prime(roundCounter)){ //Αν ο αριθμός των γύρων είναι πρώτος
-                    putchar('D'); //Δεν συνεργάζεται
-                }else {
-                    putchar('C'); //αλλιως συνεργάζεται
-                }
+            }else { //Αν δεν είναι πολλαπλάσιο του 10, τοτε το πρόγραμμα αντιγράφει τη κινηση του αντιπάλου
+                putchar(move);  
             }
             putchar('\n');
             fflush(stdout);
