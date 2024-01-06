@@ -190,6 +190,12 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     // Ενημέρωση των στοιχείων της κεφαλίδας για την ανεστραμμενη εικόνα
     *(uint32_t*)&header[18] = new_width;
     *(uint32_t*)&header[22] = new_height;
+    uint32_t newimagesize = newRawSize * new_height;
+    *(uint32_t*)&header[34] = newimagesize;
+    uint32_t newfilesize = newimagesize + headersize;
+    *(uint32_t*)&header[2] = newfilesize;
+    
+
 
     //Τα στοιχεία της κεφαλίδας γράφονται στην νέα εικόνα (output).
     fwrite(header, sizeof(uint8_t), headersize, output);
