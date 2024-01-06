@@ -72,7 +72,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t filesize = *(uint32_t*)&minheader[2];
     uint32_t imagesize = *(uint32_t*)&minheader[34];
 
-    uint32_t headersize = filesize - imagesize; //Το μέγεθος του header είναι το συνολικό μέγεθος της εικόνας - το μέγεθος του αρχείου
+    uint32_t headersize = filesize - imagesize; //Το μέγεθος του header είναι το συνολικό μέγεθος του αρχείου - το μέγεθος της εικόνας.
 
     uint32_t otherdata = offset - headersize; //Τα other data θα είναι από εκει που τελειώνει το header εως το offset της εικόνας.
     
