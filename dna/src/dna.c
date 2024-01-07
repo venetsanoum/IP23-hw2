@@ -17,23 +17,23 @@ char* LoadFile(char const* path) {
         buffer = malloc((length + 1) * sizeof(char)); // Δέσμευση μνήμης με βάση το πραγματικό μέγεθος του αρχείου
         //Προσθήκη +1 για τον τερματικό χαρακτήρα \0
         if(!buffer) { // Έλεγχος για την επιτυχία της δέσμευσης μνήμης.
-            printf("Failed to allocate memory for buffer\n");
+            fprintf(stderr,"Failed to allocate memory for buffer\n");
             exit(1);
         }
         
         if (buffer) {
             size_t bytesread = fread(buffer, sizeof(char), length, file);//Διάβασμα του αρχείου
             if(bytesread != (size_t)length) {
-                printf("Failed to read file: %s\n", path);
+                fprintf(stderr, "Failed to read file: %s\n", path);
                 exit(1);
             }
             buffer[length] = '\0'; // Προσθήκη τερματισμού συμβολοσειράς
         }else { //Αν το διάβασμα του αρχείου απέτυχε
-        printf("Failed to read file: %s\n", path);
+        fprintf(stderr,"Failed to read file: %s\n", path);
     }
         fclose(file);
     }else { //Αν το αρχείο δεν άνοιξε επιτυχώς.
-        printf("Failed to open file: %s\n", path);
+        fprintf(stderr,"Failed to open file: %s\n", path);
         exit(1);
     }
 
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
     char* StringB = LoadFile(argv[2]);
 
     if (!StringA || !StringB) { //Έλεγχος αν πέτυχε το φόρτωμα των αρχείων
-        perror("Error loading file contents\n");
+        fprintf(stderr, "Error loading file contents\n");
         return 1;
     }
  
