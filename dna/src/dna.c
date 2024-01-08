@@ -30,7 +30,7 @@ char* LoadFile(char const* path) {
             buffer[length] = '\0'; // Προσθήκη τερματισμού συμβολοσειράς
         }else { //Αν το διάβασμα του αρχείου απέτυχε
         fprintf(stderr,"Failed to read file: %s\n", path);
-    }
+        }
         fclose(file);
     }else { //Αν το αρχείο δεν άνοιξε επιτυχώς.
         fprintf(stderr,"Failed to open file: %s\n", path);
@@ -103,10 +103,15 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Error loading file contents\n");
         return 1;
     }
- 
 
     long int length1 = strlen(StringA); //Υπολογισμός μεγέθους των δύο ακολουθιών dna
     long int length2 = strlen(StringB);
+    if(length1 > 100000 || length2 > 100000) { //Έλεγχος αν οι αλυσίδες ξεπερνούν τις 100.000 βάσεις.
+        printf("Maximum chain size allowed is 100.000\n");
+        free(StringA);
+        free(StringB);
+        return 1;
+    }
 
     CommonSubStr(StringA, StringB, length1, length2); //Κλήση της συνάρτησης για την εύρεση της μέγιστης κοινής αλυσίδας μεταξύ των 2.
 
