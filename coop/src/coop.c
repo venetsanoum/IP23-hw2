@@ -16,7 +16,7 @@ void coop() {
     int consecutiveDefectionCount =0;
   
 
-    while ((move = getchar()) != EOF && roundCounter < 1e6) { //Όσο η είσοδος δεν είναι EOF και δεν έχουν ξεπεραστεί 1000 επαναλήψεις
+    while ((move = getchar()) != EOF && roundCounter < 1e6) { //Όσο η είσοδος δεν είναι EOF και δεν έχουν ξεπεραστεί 10^6 επαναλήψεις
         if (move == 'C' || move == 'D') {
             roundCounter++; //Αύξηση μετρητή των γύρων
 
@@ -36,7 +36,7 @@ void coop() {
                 
                 if (opponentCooperationCount > opponentDefectionCount) { //Αν έχει συνεργαστεί περισσότερες απο ότι δεν συνεργάστηκε
                     
-                    putchar('D'); //το πτόγραμμα δεν συνεργάζεται
+                    putchar('D'); //το πρόγραμμα δεν συνεργάζεται
                 } else {
                     
                     putchar('C'); //αλλιώς συνεργάζεται
