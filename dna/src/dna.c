@@ -3,52 +3,57 @@
 #include <string.h>
 #include <math.h>
 
-// Η συνάρτηση LoadFile διαβάζει το περιεχόμενο ενός αρχείου και το επιστρέφει ως δυναμικά δεσμευμένη συμβολοσειρά.
+int isValid(char c) { //Συνάρτηση που ελέγχει αν ένας χαρακτήρας c είναι βάση(Α, Τ, G, C)
+    return (c == 'A' || c == 'T' || c == 'G' || c == 'C');
+}
+
 char* LoadFile(char const* path) {
-    char* buffer;  //Δήλωση πίνακα buffer
-    long  length;
-    
-    FILE * file = fopen(path, "r"); // Άνοιγμα του αρχείου για ανάγνωση
+    FILE* file = fopen(path, "r"); //Άνοιγμα αρχείου 
+    int length; //Μέγεθος του αρχικού string
+    char* buffer; //Ο πίνακας που θα αποθηκεύσει την αλυσίδα dna που περιέχει το file.
+    int i = 0; //Μετρητής των έγκυρων χαρακτήρων ώστε να τοποθετηθούν στον buffer
 
-    if (file) { //Αν το αρχείο άνοιξε επιτυχώς.
-        fseek(file, 0, SEEK_END);
-        length = ftell(file); // Υπολογισμός του μεγέθους του αρχείου.
-        fseek(file, 0, SEEK_SET);
-        buffer = malloc((length + 1) * sizeof(char)); // Δέσμευση μνήμης με βάση το πραγματικό μέγεθος του αρχείου
-        //Προσθήκη +1 για τον τερματικό χαρακτήρα \0
-        if(!buffer) { // Έλεγχος για την επιτυχία της δέσμευσης μνήμης.
-            fprintf(stderr,"Failed to allocate memory for buffer\n");
-            fclose(file); //Κλείσιμο του αρχείου
-            exit(1);
-        }
-        
-        if (buffer) { //Αν πετυχε η δυναμική δέσμευση μνήμης
-            size_t bytesread = fread(buffer, sizeof(char), length, file);//Διάβασμα του αρχείου
-            if(bytesread != (size_t)length) { //Έλεγχος της fread().
-                fprintf(stderr, "Failed to read file: %s\n", path);
-                fclose(file); //Κλείσιμο του αρχείου
-                exit(1);
-            }
-            buffer[length] = '\0'; // Προσθήκη τερματικού χαρακτήρα για τη συμβολοσειρά
-        }
-
-    }else { //Αν το αρχείο δεν άνοιξε επιτυχώς.
-        fprintf(stderr,"Failed to open file: %s\n", path);
+    if (!file) { //Έλεγχος αν άνοιξε το αρχείο.
+        fprintf(stderr, "Failed to open file: %s\n", path);
         exit(1);
     }
 
-    return buffer;  // Επιστροφή του πίνακα buffer με τα στοιχεία της αλυσίδας.
-    
+    fseek(file, 0, SEEK_END);
+    length = ftell(file); //Υπολογισμός μεγέθους των χαρακτήρων του αρχείου
+    fseek(file, 0, SEEK_SET);
 
+    buffer = malloc((length + 1) * sizeof(char)); // Δέσμευση μνήμης με βάση το πραγματικό μέγεθος του αρχείου
+    //Προσθήκη +1 για τον τερματικό χαρακτήρα \0
+    if (!buffer) { //Αν δεν πέτυχε η δέσμευση μνήμης
+        fprintf(stderr, "Failed to allocate memory\n");
+        fclose(file); //Κλείσιμο του αρχείου
+        exit(1);
     }
+
+    char currentChar;//Ο τρέχων χαρακτήρας.
+    while ((currentChar = fgetc(file)) != EOF) { //Όσο δεν έχουμε φτάσει στο τέλος του αρχείου
+        if (isValid(currentChar)) {//Αν είναι έγκυρος ο χαρακτήρας,
+            buffer[i++] = currentChar; //αποθηκεύεται στο buffer.
+            //Αυξάνεται συγχρόνως ο μετρητής των έγκυρων χαρακτήρων που είναι οι δείκτες του πίνακα
+        }
+    }
+
+    buffer[i] = '\0'; //Προσθήκη του τερματικού χαρακτήρα
+    fclose(file); //Κλείσιμο του αρχείου
+    return buffer; //Επιστρέφεται ο πίνακας με την αλυσίδας dna.
+}
+
+
 
 
 void CommonSubStr(char* X, char* Y, long int m, long int n) {
     long int maxCommonChain = 0; //Το μέγιστο μήκος της κοινής αλυσίδας μεταξύ δύο αλυσίδων. 
     long int end = 0; //Η θέση του τελευταίου στοιχείου της κοινής αλυσίδας
+    
 
     //For loop για κάθε χαρακτήρα του πίνακα Χ[]
     for (long int i = 0; i < m; i++) {
+        
         //For loop για κάθε χαρακτήρα του πίνακα Υ[]
         for (long int j = 0; j < n; j++) {
             long int currentLength = 0;  //Το τρέχον μέγεθος μιας κοινής συμβολοσειράς
@@ -56,19 +61,22 @@ void CommonSubStr(char* X, char* Y, long int m, long int n) {
 
             /*Έλεγχος για κοινή αλυσίδα ξεκινώντας απο τις θέσεις i και j. Όσο δεν είμαστε στο τέλος κάποιας αλυσίδας και τα δύο στοιχεία
             ταυτίζονται αυξάνεται το μέγεθος της τρέχουσας κοινής αλυσίδας και οι θέσεις των στοιχείων ωστε να πάμε στα επόμενα*/
-            while (x < m && y < n && X[x] == Y[y]) {
-                currentLength++;
+            while (x < m && y < n && X[x] == Y[y])  {
+               currentLength++;
                 x++;
                 y++;
+                
+                
             }
 
-            //Έυρεση του μεγίστου. Αν το μέγεθος της τρέχουσας κοινής αλτσίδας είναι μεγαλύτερο απο το τρέχον max τοτε max γίνεται η τρέχουσα αλυσίδα
+            //Έυρεση του μεγίστου. Αν το μέγεθος της τρέχουσας κοινής αλυσίδας είναι μεγαλύτερο απο το τρέχον max τοτε max γίνεται η τρέχουσα αλυσίδα
             if (currentLength > maxCommonChain) {
                 maxCommonChain = currentLength;
                 end = i + maxCommonChain - 1; /*Η θέση του τελευταίου στοιχείου είναι όσο είναι το i(τυχαίο, μπορουσε και j), δηλαδή
                 η θέση (της μιας αλυσίδας) στην οποία βρισκόμαστε  + όσο είναι το μέγεθος της μέγιστης κοινής αλυσίδας - 1 γιατι διαφορετικά
                 θα είχα τη θέση του επόμενου στοιχείου μετά το τελικό.*/
             }
+            
         }
     }
 
@@ -79,10 +87,8 @@ void CommonSubStr(char* X, char* Y, long int m, long int n) {
 
     long int start = end - maxCommonChain + 1; /*Ορισμός της αρχής της μέγιστης κοινής αλυσίδας που είναι όσο ήταν η θέση του
     τελευταίου στοιχείου - το μήκος της κοινης αλυσίδας + 1 γιατι διαφορετικά θα ήμασταν στη θέση του προηγούμενου απο το πρώτο στοιχείο*/
-    for (long int i = start; i <= end; i++) { //Εκτύπωση μόνο των έγκυρων χαρακατήρων.
-        if(X[i] == 'A' || X[i] == 'C' || X[i] == 'G' || X[i] == 'T'){
+    for (long int i = start; i <= end; i++) { //Εκτύπωση της κοινής αλυσίδας.
         printf("%c", X[i]);
-        }
     }
     printf("\n");
 }
