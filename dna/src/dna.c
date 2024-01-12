@@ -3,7 +3,7 @@
 #include <string.h>
 #include <math.h>
 
-// Η συνάρτηση load_file διαβάζει το περιεχόμενο ενός αρχείου και το επιστρέφει ως δυναμικά δεσμευμένη συμβολοσειρά.
+// Η συνάρτηση LoadFile διαβάζει το περιεχόμενο ενός αρχείου και το επιστρέφει ως δυναμικά δεσμευμένη συμβολοσειρά.
 char* LoadFile(char const* path) {
     char* buffer;  //Δήλωση πίνακα buffer
     long  length;
@@ -18,20 +18,20 @@ char* LoadFile(char const* path) {
         //Προσθήκη +1 για τον τερματικό χαρακτήρα \0
         if(!buffer) { // Έλεγχος για την επιτυχία της δέσμευσης μνήμης.
             fprintf(stderr,"Failed to allocate memory for buffer\n");
+            fclose(file); //Κλείσιμο του αρχείου
             exit(1);
         }
         
-        if (buffer) {
+        if (buffer) { //Αν πετυχε η δυναμική δέσμευση μνήμης
             size_t bytesread = fread(buffer, sizeof(char), length, file);//Διάβασμα του αρχείου
-            if(bytesread != (size_t)length) {
+            if(bytesread != (size_t)length) { //Έλεγχος της fread().
                 fprintf(stderr, "Failed to read file: %s\n", path);
+                fclose(file); //Κλείσιμο του αρχείου
                 exit(1);
             }
-            buffer[length] = '\0'; // Προσθήκη τερματισμού συμβολοσειράς
-        }else { //Αν το διάβασμα του αρχείου απέτυχε
-        fprintf(stderr,"Failed to read file: %s\n", path);
+            buffer[length] = '\0'; // Προσθήκη τερματικού χαρακτήρα για τη συμβολοσειρά
         }
-        fclose(file);
+
     }else { //Αν το αρχείο δεν άνοιξε επιτυχώς.
         fprintf(stderr,"Failed to open file: %s\n", path);
         exit(1);
@@ -40,7 +40,7 @@ char* LoadFile(char const* path) {
     return buffer;  // Επιστροφή του πίνακα buffer με τα στοιχεία της αλυσίδας.
     
 
-}
+    }
 
 
 void CommonSubStr(char* X, char* Y, long int m, long int n) {
@@ -56,43 +56,30 @@ void CommonSubStr(char* X, char* Y, long int m, long int n) {
 
             /*Έλεγχος για κοινή αλυσίδα ξεκινώντας απο τις θέσεις i και j. Όσο δεν είμαστε στο τέλος κάποιας αλυσίδας και τα δύο στοιχεία
             ταυτίζονται αυξάνεται το μέγεθος της τρέχουσας κοινής αλυσίδας και οι θέσεις των στοιχείων ωστε να πάμε στα επόμενα*/
-            while (x < m && y < n) {
-     printf("x: %ld, X[x]: %c, y: %ld, Y[y]: %c\n", x, X[x], y, Y[y]); // Εκτύπωση των δεικτών και των χαρακτήρων για παρακολούθηση
+            while (x < m && y < n && X[x] == Y[y]) {
+                currentLength++;
+                x++;
+                y++;
+            }
 
-    if (X[x] == Y[y]) {
-        currentLength++;
-        x++;
-        y++;
-    } else {
-        // Εάν ο χαρακτήρας δεν είναι επιθυμητός, προχωρήστε στον επόμενο χαρακτήρα
-        while (x < m && (X[x] != 'A' && X[x] != 'C' && X[x] != 'T' && X[x] != 'G')) {
-            x++;
-        }
-        while (y < n && (Y[y] != 'A' && Y[y] != 'C' && Y[y] != 'T' && Y[y] != 'G')) {
-            y++;
-        }
-    }
-}
-
-
-            //Έυρεση του μεγίστου. Αν το μέγεθος της τρέχους κοινής αλτσίδας είναι μεγαλύτερο απο το τρέχον max τοτε max γίνεται η τρέχουσα αλυσίδα
+            //Έυρεση του μεγίστου. Αν το μέγεθος της τρέχουσας κοινής αλτσίδας είναι μεγαλύτερο απο το τρέχον max τοτε max γίνεται η τρέχουσα αλυσίδα
             if (currentLength > maxCommonChain) {
                 maxCommonChain = currentLength;
                 end = i + maxCommonChain - 1; /*Η θέση του τελευταίου στοιχείου είναι όσο είναι το i(τυχαίο, μπορουσε και j), δηλαδή
-                η θέση (της μιας αλυσίδας) στην οποία βρισκόμαστε + όσο είσαι το μέγεθος της μέγιστης κοινής αλυσίδας - 1 γιατι διαφορετικά
+                η θέση (της μιας αλυσίδας) στην οποία βρισκόμαστε  + όσο είναι το μέγεθος της μέγιστης κοινής αλυσίδας - 1 γιατι διαφορετικά
                 θα είχα τη θέση του επόμενου στοιχείου μετά το τελικό.*/
             }
         }
     }
 
-    if (maxCommonChain == 0) { //Αν δεν υπάρχει κοινή ακολουθίας εκτυπώνεται μήνυμα.
+    if (maxCommonChain == 0) { //Αν δεν υπάρχει κοινή ακολουθία εκτυπώνεται μήνυμα.
         printf("No common substring found.\n");
         return;
     }
 
     long int start = end - maxCommonChain + 1; /*Ορισμός της αρχής της μέγιστης κοινής αλυσίδας που είναι όσο ήταν η θέση του
     τελευταίου στοιχείου - το μήκος της κοινης αλυσίδας + 1 γιατι διαφορετικά θα ήμασταν στη θέση του προηγούμενου απο το πρώτο στοιχείο*/
-    for (long int i = start; i <= end; i++) { //Εκτύπωση μόνο των έγκυτων χαρακατήρων.
+    for (long int i = start; i <= end; i++) { //Εκτύπωση μόνο των έγκυρων χαρακατήρων.
         if(X[i] == 'A' || X[i] == 'C' || X[i] == 'G' || X[i] == 'T'){
         printf("%c", X[i]);
         }
@@ -104,12 +91,12 @@ void CommonSubStr(char* X, char* Y, long int m, long int n) {
 
 int main(int argc, char **argv) {
     if (argc != 3) { //Αν τα ορίσματα δεν είναι 3 εκτυπώνεται μήνυμα λάθους
-        printf("Program needs to be called as: ./dna <file1> <file2>\n");
+        printf("Program needs to be called as: ./dna file1 file2\n");
         return 1;
     }
     
 
-    char* StringA = LoadFile(argv[1]); //Κληση load_file για το ανοιγμα των αρχείων εισόδου
+    char* StringA = LoadFile(argv[1]); //Κληση LoadFile για το ανοιγμα των αρχείων εισόδου
     char* StringB = LoadFile(argv[2]);
 
     if (!StringA || !StringB) { //Έλεγχος αν πέτυχε το φόρτωμα των αρχείων
