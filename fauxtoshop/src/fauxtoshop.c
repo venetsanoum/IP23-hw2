@@ -11,7 +11,7 @@ int isValidBMP(uint8_t minheader[],uint32_t width , uint32_t height, uint16_t Bi
         return 0;
     }
 
-    //Έλεγχος αν η επικεφαλίδα εχει τουλάχιστον 54 στοιχεία.
+    //Έλεγχος αν η κεφαλίδα εχει τουλάχιστον 54 στοιχεία.
     if (headersize < 54) {
         fprintf(stderr,"Header < 54. Not a valid BMP image.\n");
         return 0;
@@ -23,8 +23,7 @@ int isValidBMP(uint8_t minheader[],uint32_t width , uint32_t height, uint16_t Bi
         return 0;
     }
 
-    int bytesPerPixel = BitsPerPixel / 8; // Υπολογισμός bytes ανά pixel
-    int rowSize = width * bytesPerPixel; // Μέγεθος κάθε γραμμής σε bytes χωρίς padding
+    int rowSize = width * 3; //Μέγεθος κάθε γραμμής χωρίς padding (το 3 είναι για την αναπαράσταση των χρωμάτων: RGB).
     int padding = 4 - (rowSize % 4); // Υπολογισμός του padding που απαιτείται
 
     // Έλεγχος αν το μέγεθος της γραμμής μαζί με το padding είναι πολλαπλάσιο του 4
@@ -53,9 +52,9 @@ int isValidBMP(uint8_t minheader[],uint32_t width , uint32_t height, uint16_t Bi
 
 
 
-//Συνάρτηση που περιστρέφει μια εικόνα bmp 90 μοίρες με τη φορά του ρολογιού
+//Συνάρτηση που περιστρέφει μια εικόνα bmp 90 μοίρες δεξιόστροφα.
 void rotateBMP90degrees(FILE *input, FILE *output) {
-        uint8_t minheader[54]; //Δήλωση ενος πίνακα για την αποθήκευση των στοιχείων της κεφαλίδας
+        uint8_t minheader[54]; //Δήλωση ενος πίνακα για την αποθήκευση των στοιχείων της κεφαλίδας(είναι τουλάχιστον 54)
 
     //Διάβασμα της κεφαλίδας του αρχείου και έλεγχος οτι τα στοιχεία της κεφαλίδας ειναι 54.
     if (fread(minheader, sizeof(uint8_t), 54, input) != 54) {
@@ -158,7 +157,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
 
 
     /*Για τη περιστροφή: Η πρώτη γραμμη της εικόνας θα γίνει η τελευταία στήλης της νέας εικόνας, η τελευταία γραμμή της εικόνας
-    θα γίνει η πρώτη στήλη της νέας εικόνας κοκ. H πρώτη στήλη της εικόνας θα γίνει η πρώτη γραμμη της νέας κοκ.*/
+    θα γίνει η πρώτη στήλη της νέας εικόνας κοκ.*/
     for (uint32_t i = 0; i < height; ++i) { //Αφορά το ύψος της εικόνας, τις γραμμες
 
         uint32_t new_j = i; //οι στήλες της νέας εικόνας θα γίνουν οι γραμμες της αρχικής εικόνας.
@@ -177,7 +176,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
 
         // Γέμισμα του padding με μηδέν
         for (int p = 0; p < new_padding; ++p) {
-        rotatedPixels[(i + 1) * newRawSize - new_padding + p] = 0;
+        rotatedPixels[(i + 1) * newRawSize - new_padding + p] = 0; //Ξεκινάμε από το τέλος των pixels.
         }
     }
 
@@ -189,8 +188,9 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t newfilesize = newimagesize + headersize;
     *(uint32_t*)&header[2] = newfilesize;
 
+    //Κλήση της isValidBMP για να ελεγχθεί αν η ανεστραμμένη εικόνα είναι έγκυρη.
     int newvalid = isValidBMP(minheader,new_width , new_height, BitsPerPixel, headersize, newfilesize, newimagesize);
-    if(!newvalid) {
+    if(!newvalid) { //Αν δεν είναι αποδεσμέυονται όλοι οι πίνακες και το πρόγραμμα τερματίζεται.
         fprintf(stderr,"(about rotated image).\n");
         free(header);
         free(rotatedPixels);
@@ -221,7 +221,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
 
 
 int main() {
-     
-    rotateBMP90degrees(stdin, stdout); // Κλήση συνάρτησης για περιστροφή 
+    rotateBMP90degrees(stdin, stdout);//Κλήση της συνάρτησης για τη περιστροφή της εικόνας.
+
     return 0;
-} 
+}
