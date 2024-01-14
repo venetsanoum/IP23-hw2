@@ -101,9 +101,9 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     exit(1);
     }
     
-    int originalRawSize = 3 * width; //Το μέγεθος της γραμμής είναι το πλάτος επί 3 γιατί η εικόνα έχει 3 bytes ανα pixel
-    int padding = (4 - (originalRawSize % 4)) % 4; //Υπολογισμός του padding
-    originalRawSize += padding; //Το τελικό μέγεθος κάθε γραμμής
+    int originalRowSize = 3 * width; //Το μέγεθος της γραμμής είναι το πλάτος επί 3 γιατί η εικόνα έχει 3 bytes ανα pixel
+    int padding = (4 - (originalRowSize % 4)) % 4; //Υπολογισμός του padding
+    originalRowSize += padding; //Το τελικό μέγεθος κάθε γραμμής
 
 
     //Δυναμική δέσμευση μνήμης για τα otherdata.
@@ -123,14 +123,14 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
 
 
     //Δυναμική δέσμευση μνήμης για τα pixels της αρχικής εικόνας
-    uint8_t* pixels = malloc(height * originalRawSize * sizeof(uint8_t));
+    uint8_t* pixels = malloc(height * originalRowSize * sizeof(uint8_t));
     if(!pixels) { //Έλεγχος επιτυχίας της malloc.
         fprintf(stderr,"Failed to allocate memory\n");
         exit(1);
     }
 
     //Διάβασμα της εικόνας και έλεγχος αν η fread πέτυχε
-    if (fread(pixels, sizeof(uint8_t), height * originalRawSize, input) != height * originalRawSize) {
+    if (fread(pixels, sizeof(uint8_t), height * originalRowSize, input) != height * originalRowSize) {
         fprintf(stderr,"Error reading pixel data.\n");
         free(pixels);
         exit(1);
@@ -143,13 +143,13 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     uint32_t new_height = width;
 
     //Το μέγεθος της εικόνας λαμβάνοντας υπόψη το padding
-    int newRawSize = 3 * new_width;
-    int new_padding = (4 -(newRawSize % 4)) % 4;
-    newRawSize += new_padding;
+    int newRowSize = 3 * new_width;
+    int new_padding = (4 -(newRowSize % 4)) % 4;
+    newRowSize += new_padding;
 
 
     //Δυναμική δέσμευση μνήμης για την αποθήκευση των νέων ανεστραμμενων pixels
-    uint8_t* rotatedPixels = malloc(new_height * newRawSize * sizeof(uint8_t));
+    uint8_t* rotatedPixels = malloc(new_height * newRowSize * sizeof(uint8_t));
     if(!rotatedPixels) { //Έλεγχος επιτυχίας της malloc.
         fprintf(stderr,"Failed to allocate memory\n");
         exit(1);
@@ -169,21 +169,21 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
             /*Ο πολλαπλασιασμός του new_i με το new_row_size υπολογίζει τη γραμμή της νέας εικόνας,
               Ο πολλαπλασιασμός του new_j με το 3 (το οποίο αντιστοιχεί στον αριθμό των χρωματικών στοιχείων RGB - κόκκινο, πράσινο, μπλε)
               υπολογίζει τη στήλη της νέας εικόνας.*/
-            rotatedPixels[(new_i * newRawSize) + (new_j * 3)] = pixels[(i * originalRawSize) + (j * 3)]; //κοκκινο
-            rotatedPixels[(new_i * newRawSize) + (new_j * 3) + 1] = pixels[(i * originalRawSize) + (j * 3) + 1]; //πράσινο
-            rotatedPixels[(new_i * newRawSize) + (new_j * 3) + 2] = pixels[(i * originalRawSize) + (j * 3) + 2]; //μπλε
+            rotatedPixels[(new_i * newRowSize) + (new_j * 3)] = pixels[(i * originalRowSize) + (j * 3)]; //κοκκινο
+            rotatedPixels[(new_i * newRowSize) + (new_j * 3) + 1] = pixels[(i * originalRowSize) + (j * 3) + 1]; //πράσινο
+            rotatedPixels[(new_i * newRowSize) + (new_j * 3) + 2] = pixels[(i * originalRowSize) + (j * 3) + 2]; //μπλε
         }
 
         // Γέμισμα του padding με μηδέν
         for (int p = 0; p < new_padding; ++p) {
-        rotatedPixels[(i + 1) * newRawSize - new_padding + p] = 0; //Ξεκινάμε από το τέλος των pixels.
+        rotatedPixels[(i + 1) * newRowSize - new_padding + p] = 0; //Ξεκινάμε από το τέλος των pixels.
         }
     }
 
     // Ενημέρωση των στοιχείων της κεφαλίδας για την ανεστραμμενη εικόνα
     *(uint32_t*)&header[18] = new_width;
     *(uint32_t*)&header[22] = new_height;
-    uint32_t newimagesize = newRawSize * new_height;
+    uint32_t newimagesize = newRowSize * new_height;
     *(uint32_t*)&header[34] = newimagesize;
     uint32_t newfilesize = newimagesize + headersize;
     *(uint32_t*)&header[2] = newfilesize;
@@ -208,7 +208,7 @@ void rotateBMP90degrees(FILE *input, FILE *output) {
     fwrite(OtherData,sizeof(uint8_t), otherdata, output);
 
     //Τα νεα pixels γράφονται στη νέα εικόνα(output).
-    fwrite(rotatedPixels, sizeof(uint8_t), new_height * newRawSize, output);
+    fwrite(rotatedPixels, sizeof(uint8_t), new_height * newRowSize, output);
 
 
     //Αποδέσμευση των πινάκων
