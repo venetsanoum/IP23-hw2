@@ -24,7 +24,7 @@ int isValidBMP(uint8_t minheader[],uint32_t width , uint32_t height, uint16_t Bi
     }
 
     int rowSize = width * 3; //Μέγεθος κάθε γραμμής χωρίς padding (το 3 είναι για την αναπαράσταση των χρωμάτων: RGB).
-    int padding = 4 - (rowSize % 4); // Υπολογισμός του padding που απαιτείται
+    int padding = (4 - (rowSize % 4)) % 4; // Υπολογισμός του padding που απαιτείται
 
     // Έλεγχος αν το μέγεθος της γραμμής μαζί με το padding είναι πολλαπλάσιο του 4
     if ((rowSize + padding) % 4 != 0) {
